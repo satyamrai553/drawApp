@@ -1,41 +1,72 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken'
+import {CreateUserSchema, SigninSchema, CreateRoomSchema} from "@repo/common/types"
 
 
-function userSignin(req: Request,res: Response, next: NextFunction){
-    const {username, password} = req.body;
-    if(!username || !password){
-        return res.status(301).json({
+function userSignin(req: Request,res: Response, next: NextFunction): void{
+    const data = SigninSchema.safeParse(req.body);
+    if(!data.success){
+        res.status(301).json({
             message: "Username and password is required"
         })
+        return;
+    }
+    const {username, password} = req.body;
+    if(!username || !password){
+         res.status(301).json({
+            message: "Username and password is required"
+        })
+        return;
     }
     //zod validation
     //db call
 
 
-    return res.status(200).json({
+    res.status(200).json({
         message: "User signed in successfully"
     })
 
 }
 
-function userSignup(req: Request, res: Response){
-    const {username, password} = req.body;
-    if(!username || !password){
-        return res.status(301).json({
-            message: "Username and password is required"
-        })
+function userSignup(req: Request, res: Response): void {
+    const result = CreateUserSchema.safeParse(req.body);
+
+    if (!result.success) {
+         res.status(400).json({
+            message: "Validation failed",
+            errors: result.error.format()
+        });
+        return;
     }
 
-    //zod validation
+    const { username, password } = result.data;
+
+    // Proceed with DB call or other logic
+
+
+    res.status(200).json({
+        message: "User signed up successfully",
+        username
+    });
+}
+
+function createRoom(req: Request, res: Response): void{
+    const result = CreateRoomSchema.safeParse(req.body);
+    if(!result.success){
+        res.status(400).json({
+            message: "Incorrect inputs"
+        })
+        return;
+    }
     //db calls
 
-    return res.status(200).json({
-        message: "User signed in successfully"
-    })    
+    res.status(200).json({
+        message: "Room created successfully",
+        userId:"123"
+    })
 }
 
 export {
     userSignin,
-    userSignup
+    userSignup,
+    createRoom
 }

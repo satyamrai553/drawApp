@@ -1,27 +1,24 @@
 import { NextFunction, Request, Response } from "express";
 import Jwt  from "jsonwebtoken";
+import {JWT_SECRET} from "@repo/backend-common/config"
 
-import dotenv from 'dotenv';
-
-
-dotenv.config({
- path: "./.env"
-}
-    
-)
-
-const JWT_SECRET = process.env.JWT_SECRET
-
-
-
-export function authMiddleware(req: Request, res: Response, next: NextFunction){
+interface AuthenticatedRequest extends Request {
+    userId?: string;
+  }
+  
+  export function authMiddleware(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     const token = req.headers["authorization"] ?? "";
-    const decoded = Jwt.verify(token, JWT_SECRET);
-    if(decoded){
-        req.userId = decoded.userId;
-    }else{
-        res.status(403).json({
-            message: "Unauthorized request"
-        })
+  
+    if (!JWT_SECRET) {
+      throw new Error("JWT_SECRET is not defined.");
     }
-}
+  
+    try {
+      const decoded = Jwt.verify(token, JWT_SECRET) as { userId: string };
+      req.userId = decoded.userId;
+      next();
+    } catch (err) {
+      res.status(403).json({ message: "Unauthorized request" });
+    }
+  }
+  
